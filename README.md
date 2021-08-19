@@ -105,6 +105,23 @@
 ## 구현
 - 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 Spring Boot와 Java로 구현하였다.</br>
 (각자의 포트넘버는 8081 ~ 808n 이다)</br>
+```
+cd rental
+mvn spring-boot:run
+
+cd payment
+mvn spring-boot:run 
+
+cd product
+mvn spring-boot:run  
+
+cd mypage
+mvn spring-boot:run
+
+cd delivery
+mvn spring-boot:run
+
+```
 ![image](https://user-images.githubusercontent.com/87048633/130033039-cfb1d4d5-395d-47b7-9687-8979ab42040a.png)
 
 - AWS 클라우드의 EKS 서비스 내에 서비스를 모두 빌드한다.
@@ -262,8 +279,8 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ### AutoScale Out
 - replica를 동적으로 늘려서 HPA를 설정한다.</br>
 - 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다.</br>
-- 렌탈 신청 서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 30프로를 넘어서면 replica 를 10개까지 늘려준다.</br>
-- 렌탈 서비스의 buildspec.yaml을 수정한다. </br>
+- 렌탈 신청 서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다.</br>
+- 렌탈 서비스의 buildspec.yaml에 resource 설정을 추가한다. </br>
  ![image](https://user-images.githubusercontent.com/87048633/130031791-16104053-0131-4ecd-939f-c9bde2e32fd5.png)</br>
 - 워크로드를 30초 동안 걸어준다.</br>
  ![image](https://user-images.githubusercontent.com/87048633/130031956-5110b212-ca8c-45af-adc0-244fd55745c3.png)</br>
