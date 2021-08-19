@@ -322,7 +322,11 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 ### Self-healing
 - Liveness probe 를 통해 Pod의 상태를 체크하다가, Pod의 상태가 비정상인경우 재시작한다. 
-  rental pod 안에 test 파일을 만들어서 재시작되는것을 확인함   
+  - rental pod 안에 tmp/test 파일을 생성한다. 
+    ![image](https://user-images.githubusercontent.com/87048624/130087024-865283ad-8610-484d-b813-928088ff67ad.png)
+  - yaml파일에 Liveness probe 설정을 한다.
+  ![image](https://user-images.githubusercontent.com/87048624/130087212-57ccb120-08fb-4976-a895-e229ebf70a9a.png)
+  - 해당 pod가 재시작하는걸 확인한다.   
   ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
   ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)
 
