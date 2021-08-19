@@ -265,8 +265,9 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 + 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
 
 
+
 ## 운영
-## CI/CD 설정
+### CI/CD 설정
 - 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 buildspec.yml 에 포함되었다.
   ![image](https://user-images.githubusercontent.com/87048633/130006493-f79b40dc-242d-4684-95eb-e4a305abb6ef.png)
   ![image](https://user-images.githubusercontent.com/87048633/130006762-19c4648c-0e27-461b-897f-59aeeddb2bc6.png)
@@ -278,15 +279,17 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 - 서킷브레이크 적용로직  
   Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
-  ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
+   ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
 
   피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
-  ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
+   ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
 
--서킷 브레이크 적용전 
+- 서킷 브레이크 적용전
+
   ![image](https://user-images.githubusercontent.com/87048624/130067551-49d8804e-af47-4913-a727-27ec6d01945b.png)
 
--서킷 브레이크 적용후 
+- 서킷 브레이크 적용후 
+
   ![image](https://user-images.githubusercontent.com/87048624/130067583-be97a8b1-6080-4145-a681-f87b476f58d3.png)
 
 
