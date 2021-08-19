@@ -4,7 +4,7 @@
   - [서비스 시나리오](#서비스-시나리오)
   - [분석/설계](#분석설계)
   - [구현](#구현)
-    - [DDD의 적용](#DDD-의-적용)
+    - [DDD의 적용](#DDD의-적용)
     - [Polyglot Persistent](#Polyglot-Persistent)
     - [Polyglot Programming](#Polyglot-Programming)
     - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
@@ -122,11 +122,119 @@ mvn spring-boot:run</br>
 cd gateway</br>
 mvn spring-boot:run</br>
 
+- AWS 클라우드의 EKS 서비스 내에 서비스를 모두 배포 후 설명을 진행한다.
+![image](https://user-images.githubusercontent.com/87048633/130029192-6520c94a-ffe2-4bc3-93c9-3f3d6498bfe1.png)
+![image](https://user-images.githubusercontent.com/87048633/130029296-b2324bb8-08de-4749-ae77-8e4a9de4cfc5.png)
 
 ### DDD의 적용
 - 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다. 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다.
+- Project 서비스 (Project.java)
+```java
+    package com.example.product;
+
+    import javax.persistence.*;
+    import org.springframework.beans.BeanUtils;
+    import java.util.List;
+    import java.util.Date;
+
+    @Entity
+    @Table(name="Product_table")
+    public class Product {
+
+    @Id
+    @GeneratedValue(strategy=GenerationType.AUTO)
+    private Long id;
+    private int amt;
+    private int stock;
+
+    @PostPersist
+    public void onPostPersist(){
+        ProductDecresed productDecresed = new ProductDecresed();
+        BeanUtils.copyProperties(this, productDecresed);
+        productDecresed.publishAfterCommit();
+
+
+    }
+
+    @PreRemove
+    public void onPreRemove(){
+        ProductIncresed productIncresed = new ProductIncresed();
+        BeanUtils.copyProperties(this, productIncresed);
+        productIncresed.publishAfterCommit();
+
+
+    }
+
+    public Long getId() {
+        return this.id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public int getAmt() {
+        return this.amt;
+    }
+
+    public void setAmt(int amt) {
+        this.amt = amt;
+    }
+
+    public int getStock() {
+        return this.stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+
+}
+```
+- Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
+```java
+package com.example.rental;
+
+import org.springframework.data.repository.CrudRepository;
+
+public interface RentalRepository extends CrudRepository<Rental, Long> {
+
+}
+```
+
 - 적용 후 REST API 의 테스트
+- 상품(정수기) 등록
+
+- 렌탈 가능 정수기 조회
+
+- 렌탈 신청
+
+- 렌탈 신청 확인
+
+- 결제 승인 확인
+
+- 배송 시작 확인
+
+- 상품(정수기) 재고 감소 확인
+
+- 렌탈 취소 
+
+- 렌탈 취소 확인
+
+- 결제 취소 확인
+
+- 배송 취소 확인
+
+- 상품(정수기) 재고 증가 확인
+
+- My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인
+
+
+### Event Driven Architecture의 구현
+![image](https://user-images.githubusercontent.com/87048633/130023014-c6cb8e54-73aa-48b8-95c2-6278f7890a28.png)
+
 ### Polyglot Persistent
+
 ### Polyglot Programming
 
 
