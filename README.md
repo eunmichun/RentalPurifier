@@ -229,7 +229,11 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
   - 상품(정수기) 재고 증가 확인
 
-  - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인
+  - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인 (CQRS)
+    mypage 조회시 rentalPlaced 이벤트까지 수신된 후, 모든 이벤트가 수신되었음
+    ![image](https://user-images.githubusercontent.com/87048624/130082764-144c4e31-f56a-4db7-8fc4-bfea567390d6.png)![image](https://user-images.githubusercontent.com/87048624/130082805-6dbaff21-97bb-4565-8d77-f8470efd10e3.png)
+
+
 
 
 ### Polyglot Persistent / Polyglot Programming
