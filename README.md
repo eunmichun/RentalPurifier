@@ -103,7 +103,7 @@
  
  
 ## 구현
-분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 Spring Boot와 Java로 구현하였다.
+- 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 Spring Boot와 Java로 구현하였다.
 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
 
 
@@ -128,18 +128,26 @@ mvn spring-boot:run</br>
 - 적용 후 REST API 의 테스트
 ### Polyglot Persistent
 ### Polyglot Programming
-### 동기식 호출과 Fallback 처리
-### 비동기식 호출과 Eventual Consistency
 
+
+### 동기식 호출과 Fallback 처리
+- 분석단계에서의 조건 중 하나로 렌탈(rental) -> 결제(Payment)간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다.
+- 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다.
+
+
+### 비동기식 호출과 Eventual Consistency
+- 결제가 이루어진 후에 배송 시스템으로 이를 알려주는 행위는 비동기식으로 처리하여 배송 시스템의 처리를 위하여 결제 주문이 블로킹 되지 않아도록 처리한다.
++ 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
 
 
 ## 운영
 ## CI/CD 설정
-- buildspec.yml 을 만들고 aws codebuild 를 통해 CI/CD 되도록 구성하였다
+- 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 buildspec.yml 에 포함되었다.
   ![image](https://user-images.githubusercontent.com/87048633/130006493-f79b40dc-242d-4684-95eb-e4a305abb6ef.png)
   ![image](https://user-images.githubusercontent.com/87048633/130006762-19c4648c-0e27-461b-897f-59aeeddb2bc6.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007397-522fdd2e-cd61-4364-86b4-276afff0248d.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007020-ce217d04-844f-423b-8bae-b141bc377ec8.png)
+  
 ### 동기식 호출/서킷 브레이킹/장애격리
 - FeignClient + hystrix
 ### AutoScale Out
