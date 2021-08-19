@@ -14,6 +14,7 @@
     - [동기식 호출/서킷 브레이킹/장애격리](#동기식-호출/서킷-브레이킹/장애격리)
     - [AutoScale Out](#AutoScale-Out)
     - [무정지 재배포](#무정지-재배포)
+    - [Self Healing](#Self-Healing)
     - [개발 운영 환경 분리](#개발-운영-환경-분리)
     - [모니터링](#모니터링)
 
@@ -206,22 +207,43 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 - 적용 후 REST API 의 테스트
   - 상품(정수기) 등록
+  
+  ![image](https://user-images.githubusercontent.com/87048624/130093629-001bf63d-51fa-48fd-b48f-6cb2ed7145af.png)
+
 
   - 렌탈 가능 정수기 조회
 
   - 렌탈 신청
+  
+  ![image](https://user-images.githubusercontent.com/87048624/130093337-76f4cc66-bde8-4fc1-93c7-d847c509184e.png)
 
   - 렌탈 신청 확인
 
   - 결제 승인 확인
 
   - 배송 시작 확인
+   1) 서비스 직접 조회
+   
+    ![image](https://user-images.githubusercontent.com/87048624/130100882-d053b088-2e49-476b-8521-fbe29367e739.png)
+   
+   2) gateway로 조회
+   
+    ![image](https://user-images.githubusercontent.com/87048624/130101109-121b595c-aedf-49dc-bf57-fb658d2756da.png)
+
 
   - 상품(정수기) 재고 감소 확인
 
+   ![image](https://user-images.githubusercontent.com/87048624/130100487-dad88728-d494-4761-9063-4db1b89d47e8.png)
+
   - 렌탈 취소 
+   
+   ![image](https://user-images.githubusercontent.com/87048624/130101401-06674612-6182-405d-afc6-381d4af52c90.png)
+
 
   - 렌탈 취소 확인
+  
+   ![image](https://user-images.githubusercontent.com/87048624/130101518-5ccd7977-a265-4fab-b50f-c2dd9f66732a.png)
+
 
   - 결제 취소 확인
 
@@ -264,12 +286,15 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ### 동기식 호출과 Fallback 처리
 - 분석단계에서의 조건 중 하나로 렌탈(rental) -> 결제(Payment)간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다.
 - 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다.
+ 
+ ![image](https://user-images.githubusercontent.com/87048624/130095444-62dfc940-cecf-4791-907e-bd0136ce1b25.png)
 
 
 ### 비동기식 호출과 Eventual Consistency
 - 결제가 이루어진 후에 배송 시스템으로 이를 알려주는 행위는 비동기식으로 처리하여 배송 시스템의 처리를 위하여 결제 주문이 블로킹 되지 않아도록 처리한다.
 + 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
 
+![image](https://user-images.githubusercontent.com/87048624/130095576-6a139cd6-67c3-4667-ab7d-a4a961114e10.png) 
 
 
 ## 운영
@@ -282,13 +307,11 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   
 ### 동기식 호출/서킷 브레이킹/장애격리
 - 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix
+- Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
+  ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
 
-- 서킷브레이크 적용로직  
- - Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
-   ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
-
- - 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
-   ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
+- 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
+  ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
 
 - 서킷 브레이크 적용전
 
@@ -320,12 +343,14 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ### 무정지 재배포
 - readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.
 
-### Self-healing
+### Self-Healing
 - Liveness probe 를 통해 Pod의 상태를 체크하다가, Pod의 상태가 비정상인경우 재시작한다. 
   - rental pod 안에 tmp/test 파일을 생성한다. 
     ![image](https://user-images.githubusercontent.com/87048624/130087024-865283ad-8610-484d-b813-928088ff67ad.png)
-  - yaml파일에 Liveness probe 설정을 한다.
-    ![image](https://user-images.githubusercontent.com/87048624/130088532-bb2702cc-ecd8-409e-94d7-0d69c74f4328.png)
+  - yaml파일에 Liveness probe 설정을 한다. 
+  
+    ![image](https://user-images.githubusercontent.com/87048624/130088840-997e5103-14f7-47c0-8148-b2f1d7de99d1.png)
+
   - 해당 pod가 재시작하는걸 확인한다.   
     ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
     ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)
