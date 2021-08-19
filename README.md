@@ -100,8 +100,8 @@
        - 고객이 수시로 렌탈/배송현황을 MyPage에서 확인할 수 있어야 한다 -> CQRS</br>
  
 #### 12.Hexagonal Architecture Diagram 도출
- ![image](https://user-images.githubusercontent.com/87048633/129574072-aa40e763-316d-4d00-aebb-f08c4654642d.png)
- 
+ ![image](https://user-images.githubusercontent.com/87048624/130107446-bb0b79eb-220f-4c20-bab2-7901632b7a1d.png)
+
  
 ## 구현
 - 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 Spring Boot와 Java로 구현하였다.</br>
@@ -206,6 +206,8 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ```
 
 - 적용 후 REST API 의 테스트
+==>>>>> 없는 캡처들도 추가로 캡처 할건지 통합해서 할건지 확인...
+
   - 상품(정수기) 등록
   
   ![image](https://user-images.githubusercontent.com/87048624/130093629-001bf63d-51fa-48fd-b48f-6cb2ed7145af.png)
@@ -279,7 +281,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 		</dependency>
 		<!-- polyglot end -->
 ```
-- pom.yml 파일 내 DB 정보 변경 및 재기동 후 렌탈 처리</br>
+- pom.xml 파일 내 DB 정보 변경 및 재기동 후 렌탈 처리</br>
 << 처리 결과 화면>>
 
 
@@ -306,7 +308,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   ![image](https://user-images.githubusercontent.com/87048633/130007020-ce217d04-844f-423b-8bae-b141bc377ec8.png)
   
 ### 동기식 호출/서킷 브레이킹/장애격리
-- 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix
+- 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix </br>
 - Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
   ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
 
@@ -341,6 +343,8 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 
 ### 무정지 재배포
+==========>>>> readiness probe 구현 안하게되면 삭제!! 
+
 - readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.
 
 ### Self-Healing
@@ -359,9 +363,12 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 
 ### 개발 운영 환경 분리
-- ConfigMap을 사용하여 운영과 개발 환경 분리
+=======>>>> ConfigMap 구현안하면 삭제!!
+- ConfigMap 사용하여 운영과 개발 환경 분리
 - kafka환경
 
 ### 모니터링
+=======>>>> ????? 
+
 - istio 설치, Kiali 구성, Jaeger 구성, Prometheus 및 Grafana 구성
 
