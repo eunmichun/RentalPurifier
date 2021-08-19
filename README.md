@@ -283,10 +283,10 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
   ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
 
--서킷 브레이크 적용전
+-서킷 브레이크 적용전 
   ![image](https://user-images.githubusercontent.com/87048624/130067551-49d8804e-af47-4913-a727-27ec6d01945b.png)
 
--서킷 브레이크 적용후
+-서킷 브레이크 적용후 
   ![image](https://user-images.githubusercontent.com/87048624/130067583-be97a8b1-6080-4145-a681-f87b476f58d3.png)
 
 
