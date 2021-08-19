@@ -320,6 +320,13 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ### 무정지 재배포
 - readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.
 
+### Self-healing
+- Liveness probe 를 통해 Pod의 상태를 체크하다가, Pod의 상태가 비정상인경우 재시작한다. 
+  rental pod 안에 test 파일을 만들어서 재시작되는것을 확인함 
+  ![image](https://user-images.githubusercontent.com/87048624/130085422-1059ab8d-d7fa-4777-89d4-b5290719ebcb.png)
+  ![image](https://user-images.githubusercontent.com/87048624/130085453-b2b55a04-8be1-4e32-993b-3dbab515489a.png)
+
+
 ### 개발 운영 환경 분리
 - ConfigMap을 사용하여 운영과 개발 환경 분리
 - kafka환경
