@@ -103,26 +103,11 @@
  
  
 ## 구현
-- 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 Spring Boot와 Java로 구현하였다.
-구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 808n 이다)
+- 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 Spring Boot와 Java로 구현하였다.</br>
+(각자의 포트넘버는 8081 ~ 808n 이다)</br>
+![image](https://user-images.githubusercontent.com/87048633/130033039-cfb1d4d5-395d-47b7-9687-8979ab42040a.png)
 
-
-cd rental </br>
-mvn spring-boot:run</br>
-</br>
-cd payment</br>
-mvn spring-boot:run </br>
-</br>
-cd delivery</br>
-mvn spring-boot:run  </br>
-</br>
-cd product</br>
-mvn spring-boot:run</br>
-</br>
-cd gateway</br>
-mvn spring-boot:run</br>
-
-- AWS 클라우드의 EKS 서비스 내에 서비스를 모두 배포 후 설명을 진행한다.
+- AWS 클라우드의 EKS 서비스 내에 서비스를 모두 빌드한다.
 ![image](https://user-images.githubusercontent.com/87048633/130029192-6520c94a-ffe2-4bc3-93c9-3f3d6498bfe1.png)
 ![image](https://user-images.githubusercontent.com/87048633/130029296-b2324bb8-08de-4749-ae77-8e4a9de4cfc5.png)
 
@@ -203,39 +188,54 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ```
 
 - 적용 후 REST API 의 테스트
-- 상품(정수기) 등록
+  - 상품(정수기) 등록
 
-- 렌탈 가능 정수기 조회
+  - 렌탈 가능 정수기 조회
 
-- 렌탈 신청
+  - 렌탈 신청
 
-- 렌탈 신청 확인
+  - 렌탈 신청 확인
 
-- 결제 승인 확인
+  - 결제 승인 확인
 
-- 배송 시작 확인
+  - 배송 시작 확인
 
-- 상품(정수기) 재고 감소 확인
+  - 상품(정수기) 재고 감소 확인
 
-- 렌탈 취소 
+  - 렌탈 취소 
 
-- 렌탈 취소 확인
+  - 렌탈 취소 확인
 
-- 결제 취소 확인
+  - 결제 취소 확인
 
-- 배송 취소 확인
+  - 배송 취소 확인
 
-- 상품(정수기) 재고 증가 확인
+  - 상품(정수기) 재고 증가 확인
 
-- My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인
+  - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인
 
 
-### Event Driven Architecture의 구현
-![image](https://user-images.githubusercontent.com/87048633/130023014-c6cb8e54-73aa-48b8-95c2-6278f7890a28.png)
+### Polyglot Persistent / Polyglot Programming
+- Polyglot Persistent 조건을 만족하기 위해 기존 h2 DB를 hsqldb로 변경하여 동작시킨다.
+```
+<!--
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		-->
 
-### Polyglot Persistent
-
-### Polyglot Programming
+		<!-- polyglot start -->
+		<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- polyglot end -->
+```
+- pom.yml 파일 내 DB 정보 변경 및 재기동 후 렌탈 처리</br>
+<< 처리 결과 화면>>
 
 
 ### 동기식 호출과 Fallback 처리
@@ -258,13 +258,31 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   
 ### 동기식 호출/서킷 브레이킹/장애격리
 - FeignClient + hystrix
+
 ### AutoScale Out
-- replica를 동적으로 늘려서 HPA를 설정한다.
+- replica를 동적으로 늘려서 HPA를 설정한다.</br>
+- 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다.</br>
+- 렌탈 신청 서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다. 설정은 CPU 사용량이 30프로를 넘어서면 replica 를 10개까지 늘려준다.</br>
+- 렌탈 서비스의 buildspec.yaml을 수정한다. </br>
+ ![image](https://user-images.githubusercontent.com/87048633/130031791-16104053-0131-4ecd-939f-c9bde2e32fd5.png)</br>
+- 워크로드를 30초 동안 걸어준다.</br>
+ ![image](https://user-images.githubusercontent.com/87048633/130031956-5110b212-ca8c-45af-adc0-244fd55745c3.png)</br>
+- AutoScale이 어떻게 되고 있는지 모니터링을 걸어둔다.</br>
+ ![image](https://user-images.githubusercontent.com/87048633/130032165-431e8c28-1d82-4a9a-9391-ddda9cae46a7.png)</br>
+- 어느정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다. </br>
+ ![image](https://user-images.githubusercontent.com/87048633/130032517-f53b5f92-acf0-4e68-908e-f60cdc2044ab.png)</br>
+ ![image](https://user-images.githubusercontent.com/87048633/130032462-2dba6d76-6bcf-41f2-a391-936f9aa1e5d0.png)</br>
+- siege 의 로그를 보아도 전체적인 성공률이 높아진 것을 확인 할 수 있다.</br>
+ ![image](https://user-images.githubusercontent.com/87048633/130032321-6b55498c-56d0-40e2-8b46-c83aa66cb951.png)</br>
+
+
 ### 무정지 재배포
 - readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.
+
 ### 개발 운영 환경 분리
 - ConfigMap을 사용하여 운영과 개발 환경 분리
 - kafka환경
+
 ### 모니터링
 - istio 설치, Kiali 구성, Jaeger 구성, Prometheus 및 Grafana 구성
 
