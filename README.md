@@ -284,10 +284,10 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 - 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix
 
 - 서킷브레이크 적용로직  
-  Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
+ - Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
    ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
 
-  피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
+ - 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
    ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
 
 - 서킷 브레이크 적용전
@@ -325,10 +325,10 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   - rental pod 안에 tmp/test 파일을 생성한다. 
     ![image](https://user-images.githubusercontent.com/87048624/130087024-865283ad-8610-484d-b813-928088ff67ad.png)
   - yaml파일에 Liveness probe 설정을 한다.
-  ![image](https://user-images.githubusercontent.com/87048624/130087212-57ccb120-08fb-4976-a895-e229ebf70a9a.png)
+    ![image](https://user-images.githubusercontent.com/87048624/130088532-bb2702cc-ecd8-409e-94d7-0d69c74f4328.png)
   - 해당 pod가 재시작하는걸 확인한다.   
-  ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
-  ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)
+    ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
+    ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)
 
 
 
