@@ -231,8 +231,9 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
   - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인 (CQRS)
   
-    mypage 조회시 rentalPlaced 이벤트까지 수신된 후, 모든 이벤트가 수신되었음
-     ![image](https://user-images.githubusercontent.com/87048624/130083276-fdc622fc-ec61-4630-ad4e-5c1460d3b6c1.png) ![image](https://user-images.githubusercontent.com/87048624/130083377-ec34b15e-9daa-4fcb-a3b9-3a6b762bd142.png)
+    mypage 조회시rentalPlaced 이벤트까지만 수신내역 확인, 모든 이벤트 수신내역 확인
+    
+     ![image](https://user-images.githubusercontent.com/87048624/130083651-18549595-ec82-4bca-a5e7-3d23952872dc.png)
 
 
 
