@@ -138,9 +138,8 @@ mvn spring-boot:run</br>
 - buildspec.yml 을 만들고 aws codebuild 를 통해 CI/CD 되도록 구성하였다
   ![image](https://user-images.githubusercontent.com/87048633/130006493-f79b40dc-242d-4684-95eb-e4a305abb6ef.png)
   ![image](https://user-images.githubusercontent.com/87048633/130006762-19c4648c-0e27-461b-897f-59aeeddb2bc6.png)
-  ![image](https://user-images.githubusercontent.com/87048633/130006943-20595c50-e1ba-4a50-ae41-57f1f8a027d6.png)
+  ![image](https://user-images.githubusercontent.com/87048633/130007397-522fdd2e-cd61-4364-86b4-276afff0248d.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007020-ce217d04-844f-423b-8bae-b141bc377ec8.png)
-  
 ### 동기식 호출/서킷 브레이킹/장애격리
 - FeignClient + hystrix
 ### AutoScale Out
