@@ -5,17 +5,21 @@
   - [분석/설계](#분석설계)
   - [구현](#구현)
     - [DDD의 적용](#DDD의-적용)
+    - [Saga](#Saga)
+    - [비동기식 호출과 Eventual Consistency](#비동기식-호출과-Eventual-Consistency)
+    - [CQRS](#CQRS)
     - [Polyglot Persistent](#Polyglot-Persistent)
     - [Polyglot Programming](#Polyglot-Programming)
+    - [Correlation](#Correlation)
     - [동기식 호출 과 Fallback 처리](#동기식-호출-과-Fallback-처리)
-    - [비동기식 호출과 Eventual Consistency](#비동기식-호출과-Eventual-Consistency)
+    - [서킷 브레이킹](#서킷-브레이킹)
+    - [Gateway](#Gateway)
   - [운영](#운영)
-    - [CI/CD 설정](#CI/CD-설정)
-    - [동기식 호출/서킷 브레이킹/장애격리](#동기식-호출/서킷-브레이킹/장애격리)
+    - [Deploy, Pipeline 설정](#Deploy,-Pipeline-설정)   
     - [AutoScale Out](#AutoScale-Out)
     - [무정지 재배포](#무정지-재배포)
     - [Self Healing](#Self-Healing)
-    - [개발 운영 환경 분리](#개발-운영-환경-분리)
+    - [ConfigMap](#ConfigMap)
 
 ## 서비스 시나리오
     기능적 요구사항
@@ -125,7 +129,7 @@ cd gateway
 mvn spring-boot:run
 
 ```
-![image](https://user-images.githubusercontent.com/87048633/130033039-cfb1d4d5-395d-47b7-9687-8979ab42040a.png)
+![image](https://user-images.githubusercontent.com/87048624/130170600-c09a8bd1-6c00-4382-b4ad-ef6d6dd2552a.png)
 
 - AWS 클라우드의 EKS 서비스 내에 서비스를 모두 빌드한다.
 ![image](https://user-images.githubusercontent.com/87048633/130029192-6520c94a-ffe2-4bc3-93c9-3f3d6498bfe1.png)
@@ -206,8 +210,9 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 }
 ```
-</br>
+</br></br>
 
+### Saga
 - 적용 후 REST API 의 테스트</br>
 
   - 상품(정수기) 등록</br>
@@ -236,14 +241,6 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
     : paymentId = 5에 대한  delivery 조회 됨</br>
    ![image](https://user-images.githubusercontent.com/87048624/130167028-d6d5b306-a48d-40da-bf8f-a079b3cc0859.png)</br>
 
-  - kafka consumer 확인</br>
-    1) 서비스 직접 조회</br>   
-    ![image](https://user-images.githubusercontent.com/87048624/130100882-d053b088-2e49-476b-8521-fbe29367e739.png)</br>
-   
-    2) gateway로 조회</br>   
-    ![image](https://user-images.githubusercontent.com/87048624/130166073-6e213177-ceb8-44fa-9b12-8538bfd9b754.png)</br>
-
-
   - 상품(정수기) 재고 감소 확인</br>
     ![image](https://user-images.githubusercontent.com/87048624/130167387-abcc3a2a-c366-4a72-b40d-25a1485a6e70.png)</br>
 
@@ -260,13 +257,66 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
     ![image](https://user-images.githubusercontent.com/87048624/130167750-1d6ab2f7-d563-420d-af96-1cc62417a7dc.png)</br>
 
   - 상품(정수기) 재고 증가 확인</br>  
-    ![image](https://user-images.githubusercontent.com/87048624/130167803-dcba408e-8ead-4c91-b2fa-fb5cac3d9969.png)
+    ![image](https://user-images.githubusercontent.com/87048624/130167803-dcba408e-8ead-4c91-b2fa-fb5cac3d9969.png)</br>  
 
+
+### 비동기식 호출과 Eventual Consistency
+- RentalPlaced -> PaymentApproved -> DeliveryStarted -> ProductDecreased 순서로 Event가 처리됨</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130095576-6a139cd6-67c3-4667-ab7d-a4a961114e10.png) </br>
+
+- 결과적 일치 확인</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130171502-462a0563-cc65-428a-a22d-4be469e0fae9.png)</br>
+
+
+### CQRS
   - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인 (CQRS)</br>    
     : mypage 조회시rentalPlaced 이벤트까지만 수신내역 확인, 모든 이벤트 수신내역 확인</br>      
      ![image](https://user-images.githubusercontent.com/87048624/130083651-18549595-ec82-4bca-a5e7-3d23952872dc.png)</br>
 
 
+### Correlation 
+  - RentalCanceled 이벤트 발생</br> 
+  ![image](https://user-images.githubusercontent.com/87048624/130172126-56738d8c-2968-4728-a32c-88af68eb7416.png)</br> 
+
+  - CorrelationId로 찾아서 삭제</br> 
+  ![image](https://user-images.githubusercontent.com/87048624/130172215-6c23c8a6-a009-419c-873e-83ea556fd2c6.png)</br> 
+
+
+### 동기식 호출
+- 분석단계에서의 조건 중 하나로 렌탈(rental) -> 결제(Payment)간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다.
+- 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+  - rental서비스 내부의 payment 서비스</br> 
+ ![image](https://user-images.githubusercontent.com/87048624/130165134-0539dc96-5779-410c-ac46-f16f1ade7658.png)</br> 
+  - payment micro 서비스를 연동하기위한 rental 서비스의 application.yaml 파일</br>   
+ ![image](https://user-images.githubusercontent.com/87048624/130165157-e4028d4c-6ecd-44aa-b21f-d52a1bfecd6a.png)</br> 
+  - 동기식 호출 후 payment 서비스 처리결과</br> 
+ ![image](https://user-images.githubusercontent.com/87048624/130095444-62dfc940-cecf-4791-907e-bd0136ce1b25.png)</br> 
+
+
+### Gateway
+  - Gateway 서비스 확인</br>
+    1) 서비스 직접 조회</br>   
+    ![image](https://user-images.githubusercontent.com/87048624/130100882-d053b088-2e49-476b-8521-fbe29367e739.png)</br>
+   
+    2) Gateway로 조회</br>   
+    ![image](https://user-images.githubusercontent.com/87048624/130166073-6e213177-ceb8-44fa-9b12-8538bfd9b754.png)</br>
+
+
+### 서킷 브레이킹
+- 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix </br>
+- Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 Circuit Breaker 회로가 닫히도록 설정</br>
+  ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
+
+- 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
+  ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
+
+- 서킷 브레이크 적용전
+
+  ![image](https://user-images.githubusercontent.com/87048624/130067551-49d8804e-af47-4913-a727-27ec6d01945b.png)
+
+- 서킷 브레이크 적용후 
+
+  ![image](https://user-images.githubusercontent.com/87048624/130067583-be97a8b1-6080-4145-a681-f87b476f58d3.png)</br>
 
 
 ### Polyglot Persistent / Polyglot Programming
@@ -289,52 +339,26 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 		<!-- polyglot end -->
 ```
 
-- pom.xml 파일 내 DB 정보 변경 및 재기동 후 렌탈 처리</br>
-![image](https://user-images.githubusercontent.com/87048624/130165475-6efe2537-9941-4e0a-a689-a6de60a8ee67.png)
-</br>
+- pom.xml 파일 내 DB 정보 변경 및 재기동</br>
+![image](https://user-images.githubusercontent.com/87048624/130165475-6efe2537-9941-4e0a-a689-a6de60a8ee67.png)</br>
+- rental 서비스 재기동 후 DB에 데이터 없는 상태</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130172977-b3fc6202-4f63-4345-9156-d6d579aab07d.png)</br>
+- rentalPlaced 정상 처리</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130173106-ba3f9f19-7be4-4d9a-b192-7ba4fb433433.png)</br>
+- Pub/sub 결과도 정상</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130173152-57344c97-1f09-4aa6-b133-dc7a1961816f.png)</br>
 
-
-### 동기식 호출
-- 분석단계에서의 조건 중 하나로 렌탈(rental) -> 결제(Payment)간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다.
-- 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다.
- ![image](https://user-images.githubusercontent.com/87048624/130165134-0539dc96-5779-410c-ac46-f16f1ade7658.png)
- ![image](https://user-images.githubusercontent.com/87048624/130165157-e4028d4c-6ecd-44aa-b21f-d52a1bfecd6a.png)
-
- ![image](https://user-images.githubusercontent.com/87048624/130095444-62dfc940-cecf-4791-907e-bd0136ce1b25.png)
-
-
-### 비동기식 호출과 Eventual Consistency
-- 결제가 이루어진 후에 배송 시스템으로 이를 알려주는 행위는 비동기식으로 처리하여 배송 시스템의 처리를 위하여 결제 주문이 블로킹 되지 않아도록 처리한다.
-+ 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
-
-![image](https://user-images.githubusercontent.com/87048624/130095576-6a139cd6-67c3-4667-ab7d-a4a961114e10.png) </br></br>
 
 
 
 ## 운영
-### CI/CD 설정
+### Deploy, Pipeline 설정
 - 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 aws codebuild를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 buildspec.yml 에 포함되었다.
   ![image](https://user-images.githubusercontent.com/87048633/130006493-f79b40dc-242d-4684-95eb-e4a305abb6ef.png)
   ![image](https://user-images.githubusercontent.com/87048633/130006762-19c4648c-0e27-461b-897f-59aeeddb2bc6.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007397-522fdd2e-cd61-4364-86b4-276afff0248d.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007020-ce217d04-844f-423b-8bae-b141bc377ec8.png)</br>
   
-### 동기식 호출/서킷 브레이킹/장애격리
-- 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix </br>
-- Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 Circuit Breaker 회로가 닫히도록 설정</br>
-  ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
-
-- 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
-  ![image](https://user-images.githubusercontent.com/87048624/130067490-0a3c5a7e-9cda-4143-b115-76e5ef9bb8ba.png)
-
-- 서킷 브레이크 적용전
-
-  ![image](https://user-images.githubusercontent.com/87048624/130067551-49d8804e-af47-4913-a727-27ec6d01945b.png)
-
-- 서킷 브레이크 적용후 
-
-  ![image](https://user-images.githubusercontent.com/87048624/130067583-be97a8b1-6080-4145-a681-f87b476f58d3.png)</br>
-
 
 
 ### AutoScale Out
@@ -346,7 +370,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 - 오토스케일링 설정 (해당 deployment 컨테이너의 최대값/최소값 설정)
 ```
-  >kubectl autoscale deployment wizard-product --cpu-percent=50 --min=1 --max=10   
+  >kubectl autoscale deployment user5-rental --cpu-percent=50 --min=1 --max=10   
 ``` 
 - 워크로드를 110명, 30초 동안 부하를 걸어준다.</br>
  ![image](https://user-images.githubusercontent.com/87048624/130164937-5be87dce-e3dd-4f3e-b1cd-aa02610c13de.png)</br>
@@ -361,10 +385,18 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 
 ### 무정지 재배포
-==========>>>> readiness probe 구현 안하게되면 삭제!! 
-
 - readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.</br> 
+- 주석처리하여 v2 배포</br> 
+ ![image](https://user-images.githubusercontent.com/87048624/130180233-576fdee7-ab33-488f-a092-7bd29876b542.png)</br>
+- siege -c10 -t150S -v http://user5-rental 부하 후 readiness 주석 삭제 후 배포 하여 Availablility 100% 이하 확인</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130177311-f7a5638a-2f5a-43e9-8a4e-c54aeb9d7ed8.png) </br> 
+- 주석해제 후 v3 배포</br> 
+ ![image](https://user-images.githubusercontent.com/87048624/130177611-4330cb64-4ddb-4dad-9373-dc5fa9c257f3.png)</br>
+- siege -c10 -t150S -v http://user5-rental 부하(동일조건)  readiness 옵션 존재 시 Availablility 100% 확인</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130177836-c04e4900-96c3-4079-993f-da53dce775c2.png)</br>
 
+ 
+ 
 ### Self-Healing
 - Liveness probe 를 통해 Pod의 상태를 체크하다가, Pod의 상태가 비정상인경우 재시작한다. 
   - rental 서비스 yaml파일에 Liveness probe 설정을 한다. </br>  
@@ -376,11 +408,11 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
     ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
     ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)</br>
 
-
-
-### 개발 운영 환경 분리
-=======>>>> ConfigMap 구현안하면 삭제!!
-- ConfigMap 사용하여 운영과 개발 환경 분리
-- kafka환경
-
-
+## ConfigMap 
+ - configMap 생성</br>
+ ```
+  > kubectl create configmap port-list --from-literal=port=80 --from-literal=port2=8080
+ ``` 
+  ![image](https://user-images.githubusercontent.com/87048624/130178209-3a3362cb-7f40-4abe-9593-53d6c83ac0c3.png)</br>
+  
+  ![image](https://user-images.githubusercontent.com/87048624/130178548-c910c33f-16d5-46de-85e1-8af9c123eed7.png)</br>
