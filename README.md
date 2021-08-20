@@ -407,7 +407,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
     ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
     ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)</br>
 
-## ConfigMap 
+### ConfigMap 
  - configMap 생성</br>
  ```
   > kubectl create configmap port-list --from-literal=port=80 --from-literal=port2=8080
