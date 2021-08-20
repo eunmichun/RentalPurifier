@@ -408,10 +408,15 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
     ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)</br>
 
 ### ConfigMap 
- - configMap 생성</br>
- ```
-  > kubectl create configmap port-list --from-literal=port=80 --from-literal=port2=8080
- ``` 
-  ![image](https://user-images.githubusercontent.com/87048624/130178209-3a3362cb-7f40-4abe-9593-53d6c83ac0c3.png)</br>
-  
-  ![image](https://user-images.githubusercontent.com/87048624/130178548-c910c33f-16d5-46de-85e1-8af9c123eed7.png)</br>
+ - rental 서비스의 application.yaml 소스 반영부분 </br>
+  ![image](https://user-images.githubusercontent.com/87048624/130183052-707ce480-fd57-4cf3-beee-d4db5c3a77e4.png)</br>
+
+ - 생성전 배포후 rental pod 수행안함 </br>
+  ![image](https://user-images.githubusercontent.com/87048624/130183020-1a521507-f678-4ba3-b0ee-4d21c0edeeed.png)</br>
+ - configMap 생성</br> 
+  ```
+   >kubectl create configmap apiurl --from-literal=url=http://payment:8080
+  ``` 
+ - rental pod 수행</br>
+  ![image](https://user-images.githubusercontent.com/87048624/130183035-b4872b21-8678-4757-84b4-416e1736f19e.png)</br>
+
