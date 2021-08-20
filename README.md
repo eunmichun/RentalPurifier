@@ -14,7 +14,7 @@
     - [서킷 브레이킹](#서킷-브레이킹)  
     - [Polyglot Persistent/Polyglot Programmin](#Polyglot-Persistent-/-Polyglot-Programming)
   - [운영](#운영)
-    - [Deploy, Pipeline 설정](#Deploy,-Pipeline-설정)   
+    - [Deploy Pipeline 설정](#Deploy,-Pipeline-설정)   
     - [AutoScale Out](#AutoScale-Out)
     - [무정지 재배포](#무정지-재배포)
     - [Self Healing](#Self-Healing)
