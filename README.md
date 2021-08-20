@@ -16,7 +16,6 @@
     - [무정지 재배포](#무정지-재배포)
     - [Self Healing](#Self-Healing)
     - [개발 운영 환경 분리](#개발-운영-환경-분리)
-    - [모니터링](#모니터링)
 
 ## 서비스 시나리오
     기능적 요구사항
@@ -120,6 +119,9 @@ cd mypage
 mvn spring-boot:run
 
 cd delivery
+mvn spring-boot:run
+
+cd gateway
 mvn spring-boot:run
 
 ```
@@ -281,14 +283,18 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 		</dependency>
 		<!-- polyglot end -->
 ```
+
 - pom.xml 파일 내 DB 정보 변경 및 재기동 후 렌탈 처리</br>
-<< 처리 결과 화면>>
+![image](https://user-images.githubusercontent.com/87048624/130165475-6efe2537-9941-4e0a-a689-a6de60a8ee67.png)
+</br>
 
 
-### 동기식 호출과 Fallback 처리
+### 동기식 호출
 - 분석단계에서의 조건 중 하나로 렌탈(rental) -> 결제(Payment)간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다.
 - 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다.
- 
+ ![image](https://user-images.githubusercontent.com/87048624/130165134-0539dc96-5779-410c-ac46-f16f1ade7658.png)
+ ![image](https://user-images.githubusercontent.com/87048624/130165157-e4028d4c-6ecd-44aa-b21f-d52a1bfecd6a.png)
+
  ![image](https://user-images.githubusercontent.com/87048624/130095444-62dfc940-cecf-4791-907e-bd0136ce1b25.png)
 
 
@@ -296,12 +302,13 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 - 결제가 이루어진 후에 배송 시스템으로 이를 알려주는 행위는 비동기식으로 처리하여 배송 시스템의 처리를 위하여 결제 주문이 블로킹 되지 않아도록 처리한다.
 + 이를 위하여 결제이력에 기록을 남긴 후에 곧바로 결제승인이 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
 
-![image](https://user-images.githubusercontent.com/87048624/130095576-6a139cd6-67c3-4667-ab7d-a4a961114e10.png) 
+![image](https://user-images.githubusercontent.com/87048624/130095576-6a139cd6-67c3-4667-ab7d-a4a961114e10.png) </br></br>
+
 
 
 ## 운영
 ### CI/CD 설정
-- 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 GCP를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 buildspec.yml 에 포함되었다.
+- 각 구현체들은 각자의 source repository 에 구성되었고, 사용한 CI/CD 플랫폼은 aws codebuild를 사용하였으며, pipeline build script 는 각 프로젝트 폴더 이하에 buildspec.yml 에 포함되었다.
   ![image](https://user-images.githubusercontent.com/87048633/130006493-f79b40dc-242d-4684-95eb-e4a305abb6ef.png)
   ![image](https://user-images.githubusercontent.com/87048633/130006762-19c4648c-0e27-461b-897f-59aeeddb2bc6.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007397-522fdd2e-cd61-4364-86b4-276afff0248d.png)
@@ -309,7 +316,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   
 ### 동기식 호출/서킷 브레이킹/장애격리
 - 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix </br>
-- Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 CB 회로가 닫히도록 설정
+- Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 610 밀리가 넘어서기 시작하여 어느정도 유지되면 Circuit Breaker 회로가 닫히도록 설정</br>
   ![image](https://user-images.githubusercontent.com/87048624/130067453-789251b4-e84a-4036-a1f6-2fd1154d8203.png)
 
 - 피호출 서비스(결제:payment) 의 임의 부하 처리 - 400 밀리에서 증감 220 밀리 정도 왔다갔다 하게 처리함 
@@ -330,9 +337,14 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 - 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다.</br>
 - 렌탈 신청 서비스에 대한 replica 를 동적으로 늘려주도록 HPA 를 설정한다.</br>
 - 렌탈 서비스의 buildspec.yaml에 resource 설정을 추가한다. </br>
- ![image](https://user-images.githubusercontent.com/87048633/130031791-16104053-0131-4ecd-939f-c9bde2e32fd5.png)</br>
-- 워크로드를 30초 동안 걸어준다.</br>
- ![image](https://user-images.githubusercontent.com/87048633/130031956-5110b212-ca8c-45af-adc0-244fd55745c3.png)</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130164837-cbf48e01-6f6f-4fea-99a1-84e0fce444a1.png)
+
+- 오토스케일링 설정 (해당 deployment 컨테이너의 최대값/최소값 설정)
+  >kubectl autoscale deployment wizard-product --cpu-percent=50 --min=1 --max=10   
+ 
+- 워크로드를 110명, 30초 동안 부하를 걸어준다.</br>
+ ![image](https://user-images.githubusercontent.com/87048624/130164937-5be87dce-e3dd-4f3e-b1cd-aa02610c13de.png)</br>
+ 
 - AutoScale이 어떻게 되고 있는지 모니터링을 걸어둔다.</br>
  ![image](https://user-images.githubusercontent.com/87048633/130032165-431e8c28-1d82-4a9a-9391-ddda9cae46a7.png)</br>
 - 어느정도 시간이 흐른 후 (약 30초) 스케일 아웃이 벌어지는 것을 확인할 수 있다. </br>
@@ -349,10 +361,9 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 ### Self-Healing
 - Liveness probe 를 통해 Pod의 상태를 체크하다가, Pod의 상태가 비정상인경우 재시작한다. 
-  - rental pod 안에 tmp/test 파일을 생성한다. 
-    ![image](https://user-images.githubusercontent.com/87048624/130087024-865283ad-8610-484d-b813-928088ff67ad.png)
-  - yaml파일에 Liveness probe 설정을 한다. 
-  
+  - rental 서비스 yaml파일에 Liveness probe 설정을 한다. </br>  
+   . /tmp/test 파일이 존재하는지,  5초(periodSeconds 파라미터 값)마다 확인</br>
+  - 파일이 존재하지 않을 경우, 정상 작동에 문제가 있다고 판단되어 자동으로 컨테이너가 재시작</br>
     ![image](https://user-images.githubusercontent.com/87048624/130088840-997e5103-14f7-47c0-8148-b2f1d7de99d1.png)
 
   - 해당 pod가 재시작하는걸 확인한다.   
@@ -361,14 +372,9 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 
 
-
 ### 개발 운영 환경 분리
 =======>>>> ConfigMap 구현안하면 삭제!!
 - ConfigMap 사용하여 운영과 개발 환경 분리
 - kafka환경
 
-### 모니터링
-=======>>>> ????? 
-
-- istio 설치, Kiali 구성, Jaeger 구성, Prometheus 및 Grafana 구성
 
