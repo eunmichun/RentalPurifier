@@ -206,60 +206,65 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 }
 ```
+</br>
 
-- 적용 후 REST API 의 테스트
-==>>>>> 없는 캡처들도 추가로 캡처 할건지 통합해서 할건지 확인...
+- 적용 후 REST API 의 테스트</br>
 
-  - 상품(정수기) 등록
-  
-  ![image](https://user-images.githubusercontent.com/87048624/130093629-001bf63d-51fa-48fd-b48f-6cb2ed7145af.png)
+  - 상품(정수기) 등록</br>
+    : 상품 3건 등록 </br>
+   ![image](https://user-images.githubusercontent.com/87048624/130166189-177cef72-050c-4c72-800e-5c8f1346f719.png)</br>
+   ![image](https://user-images.githubusercontent.com/87048624/130166209-bc3263f8-40ef-495e-8ce7-5bb5bd227de5.png)</br>
+
+  - 렌탈 가능 정수기 조회</br>
+    : 등록한 상품1, 상품2, 상품3 조회됨</br>
+   ![image](https://user-images.githubusercontent.com/87048624/130166322-0701ed65-bddd-42ac-9327-95478a75bae6.png)</br>
+
+  - 렌탈 신청</br>  
+    : 조회 시 렌탈 신청 건 없음을 확인 후 렌탈 신청</br>  
+   ![image](https://user-images.githubusercontent.com/87048624/130166446-f4f4696d-719c-434b-8793-e41a801e051b.png)</br>
+
+  - 렌탈 신청 확인</br>
+    : rentalId = 1인 렌탈 생성 </br> 
+   ![image](https://user-images.githubusercontent.com/87048624/130166720-4ecceef4-3974-4369-b731-ed5e233438aa.png)</br>
+
+  - 결제 승인 확인</br>
+    : rentalId = 1에 대한 paymentId = 5인 payment의 status 확인 </br> 
+   ![image](https://user-images.githubusercontent.com/87048624/130166870-aba9ade8-9b45-4b68-998f-4cd942b3e415.png)</br> 
 
 
-  - 렌탈 가능 정수기 조회
+  - 배송 시작 확인</br>
+    : paymentId = 5에 대한  delivery 조회 됨</br>
+   ![image](https://user-images.githubusercontent.com/87048624/130167028-d6d5b306-a48d-40da-bf8f-a079b3cc0859.png)</br>
 
-  - 렌탈 신청
-  
-  ![image](https://user-images.githubusercontent.com/87048624/130093337-76f4cc66-bde8-4fc1-93c7-d847c509184e.png)
-
-  - 렌탈 신청 확인
-
-  - 결제 승인 확인
-
-  - 배송 시작 확인
-   1) 서비스 직접 조회
+  - kafka consumer 확인</br>
+    1) 서비스 직접 조회</br>   
+    ![image](https://user-images.githubusercontent.com/87048624/130100882-d053b088-2e49-476b-8521-fbe29367e739.png)</br>
    
-    ![image](https://user-images.githubusercontent.com/87048624/130100882-d053b088-2e49-476b-8521-fbe29367e739.png)
+    2) gateway로 조회</br>   
+    ![image](https://user-images.githubusercontent.com/87048624/130166073-6e213177-ceb8-44fa-9b12-8538bfd9b754.png)</br>
+
+
+  - 상품(정수기) 재고 감소 확인</br>
+    ![image](https://user-images.githubusercontent.com/87048624/130167387-abcc3a2a-c366-4a72-b40d-25a1485a6e70.png)</br>
+
+  - 렌탈 취소</br> 
+    ![image](https://user-images.githubusercontent.com/87048624/130167484-d6733c1b-153a-4a55-a1ae-fd2b38209187.png)</br>
    
-   2) gateway로 조회
-   
-    ![image](https://user-images.githubusercontent.com/87048624/130101109-121b595c-aedf-49dc-bf57-fb658d2756da.png)
+  - 렌탈 취소 확인</br>  
+    ![image](https://user-images.githubusercontent.com/87048624/130167567-033529f9-6d59-428d-84c0-63974b32fae8.png)</br>
 
+  - 결제 취소 확인</br>  
+    ![image](https://user-images.githubusercontent.com/87048624/130167646-c01d6969-5728-4493-a681-354363bd8dc4.png)</br>
 
-  - 상품(정수기) 재고 감소 확인
+  - 배송 취소 확인</br>  
+    ![image](https://user-images.githubusercontent.com/87048624/130167750-1d6ab2f7-d563-420d-af96-1cc62417a7dc.png)</br>
 
-   ![image](https://user-images.githubusercontent.com/87048624/130100487-dad88728-d494-4761-9063-4db1b89d47e8.png)
+  - 상품(정수기) 재고 증가 확인</br>  
+    ![image](https://user-images.githubusercontent.com/87048624/130167803-dcba408e-8ead-4c91-b2fa-fb5cac3d9969.png)
 
-  - 렌탈 취소 
-   
-   ![image](https://user-images.githubusercontent.com/87048624/130101401-06674612-6182-405d-afc6-381d4af52c90.png)
-
-
-  - 렌탈 취소 확인
-  
-   ![image](https://user-images.githubusercontent.com/87048624/130101518-5ccd7977-a265-4fab-b50f-c2dd9f66732a.png)
-
-
-  - 결제 취소 확인
-
-  - 배송 취소 확인
-
-  - 상품(정수기) 재고 증가 확인
-
-  - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인 (CQRS)
-  
-    mypage 조회시rentalPlaced 이벤트까지만 수신내역 확인, 모든 이벤트 수신내역 확인
-    
-     ![image](https://user-images.githubusercontent.com/87048624/130083651-18549595-ec82-4bca-a5e7-3d23952872dc.png)
+  - My Page에서 렌탈 신청 여부/결제성공여부/배송상태확인 (CQRS)</br>    
+    : mypage 조회시rentalPlaced 이벤트까지만 수신내역 확인, 모든 이벤트 수신내역 확인</br>      
+     ![image](https://user-images.githubusercontent.com/87048624/130083651-18549595-ec82-4bca-a5e7-3d23952872dc.png)</br>
 
 
 
@@ -312,7 +317,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
   ![image](https://user-images.githubusercontent.com/87048633/130006493-f79b40dc-242d-4684-95eb-e4a305abb6ef.png)
   ![image](https://user-images.githubusercontent.com/87048633/130006762-19c4648c-0e27-461b-897f-59aeeddb2bc6.png)
   ![image](https://user-images.githubusercontent.com/87048633/130007397-522fdd2e-cd61-4364-86b4-276afff0248d.png)
-  ![image](https://user-images.githubusercontent.com/87048633/130007020-ce217d04-844f-423b-8bae-b141bc377ec8.png)
+  ![image](https://user-images.githubusercontent.com/87048633/130007020-ce217d04-844f-423b-8bae-b141bc377ec8.png)</br>
   
 ### 동기식 호출/서킷 브레이킹/장애격리
 - 서킷 브레이킹 프레임워크의 선택: FeignClient + hystrix </br>
@@ -328,7 +333,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
 - 서킷 브레이크 적용후 
 
-  ![image](https://user-images.githubusercontent.com/87048624/130067583-be97a8b1-6080-4145-a681-f87b476f58d3.png)
+  ![image](https://user-images.githubusercontent.com/87048624/130067583-be97a8b1-6080-4145-a681-f87b476f58d3.png)</br>
 
 
 
@@ -340,8 +345,9 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
  ![image](https://user-images.githubusercontent.com/87048624/130164837-cbf48e01-6f6f-4fea-99a1-84e0fce444a1.png)
 
 - 오토스케일링 설정 (해당 deployment 컨테이너의 최대값/최소값 설정)
+```
   >kubectl autoscale deployment wizard-product --cpu-percent=50 --min=1 --max=10   
- 
+``` 
 - 워크로드를 110명, 30초 동안 부하를 걸어준다.</br>
  ![image](https://user-images.githubusercontent.com/87048624/130164937-5be87dce-e3dd-4f3e-b1cd-aa02610c13de.png)</br>
  
@@ -357,7 +363,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 ### 무정지 재배포
 ==========>>>> readiness probe 구현 안하게되면 삭제!! 
 
-- readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.
+- readiness probe 를 통해 이후 서비스가 활성 상태가 되면 유입을 진행시킨다.</br> 
 
 ### Self-Healing
 - Liveness probe 를 통해 Pod의 상태를 체크하다가, Pod의 상태가 비정상인경우 재시작한다. 
@@ -368,7 +374,7 @@ public interface RentalRepository extends CrudRepository<Rental, Long> {
 
   - 해당 pod가 재시작하는걸 확인한다.   
     ![image](https://user-images.githubusercontent.com/87048624/130086524-d479788b-1023-4a95-906d-dad1a9cef1e5.png) 
-    ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)
+    ![image](https://user-images.githubusercontent.com/87048624/130086552-2c59944d-6f71-4332-8c82-1ce5eff50a85.png)</br>
 
 
 
